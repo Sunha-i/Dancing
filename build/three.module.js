@@ -50091,11 +50091,12 @@ class SkeletonHelper extends LineSegments {
 
 }
 
-class CustomCurveSkeleton extends Line {
+class CustomCurveSkeleton extends Mesh {
 
-	constructor( object ) {
+	constructor( object, nameList ) {
 
 		const bones = getBoneList( object );
+		const numIndex = nameList.length;
 
 		const path = [];
 
@@ -50104,31 +50105,26 @@ class CustomCurveSkeleton extends Line {
 			const bone = bones[ i ];
 			const vertex = bone.getWorldPosition(new Vector3());
 
-			if (bone.name.includes('RightFoot')) {
-				path[0] = new Vector3(vertex.x, vertex.y, vertex.z);
-			} else if (bone.name.includes('RightUpLeg')) {
-				path[1] = new Vector3(vertex.x, vertex.y, vertex.z);
-			} else if (bone.name.includes('Hips')) {
-				path[2] = new Vector3(vertex.x, vertex.y, vertex.z);
-			} else if (bone.name.includes('LeftUpLeg')) {
-				path[3] = new Vector3(vertex.x, vertex.y, vertex.z);
-			} else if (bone.name.includes('LeftFoot')) {
-				path[4] = new Vector3(vertex.x, vertex.y, vertex.z);
+			for ( let j = 0; j < numIndex; j ++ ) {
+
+				const boneName = nameList[j];
+				
+				if (bone.name === 'mixamorig' + boneName) {
+					path[j] = new Vector3(vertex.x, vertex.y, vertex.z);
+				}
 			}
 	
 		}
 		const curve = new CatmullRomCurve3(path);
 		
-		const points = curve.getPoints( 50 );
-		
-		const geometry = new BufferGeometry().setFromPoints( points );
+		const geometry = new TubeGeometry(curve, 100, 1.0, 10, false);
 	
-		const material = new LineBasicMaterial( { color: 0xff0000 } );
+		const material = new LineBasicMaterial( { color: 0xff00ff } );
 
 		super( geometry, material );
 
-		this.isSkeletonHelper4 = true;
-		this.type = 'SkeletonHelper4';
+		this.isCustomCurveSkeleton = true;
+		this.type = 'CustomCurveSkeleton';
 
 		this.root = object;
 		this.bones = bones;
@@ -50136,6 +50132,8 @@ class CustomCurveSkeleton extends Line {
 		this.matrix = object.matrixWorld;
 		this.matrixAutoUpdate = false;
 
+		this.numIndex = numIndex;
+		this.nameList = nameList;
 	}
 
 	updateMatrixWorld( force ) {
@@ -50150,34 +50148,21 @@ class CustomCurveSkeleton extends Line {
 
 			const bone = bones[ i ];
 
-			if (bone.name.includes('RightFoot')) {
-				_boneMatrix.multiplyMatrices( _matrixWorldInv, bone.matrixWorld );
-				_vector$2.setFromMatrixPosition( _boneMatrix );
-				path[0] = new Vector3(_vector$2.x, _vector$2.y, _vector$2.z);
-			} else if (bone.name.includes('RightUpLeg')) {
-				_boneMatrix.multiplyMatrices( _matrixWorldInv, bone.matrixWorld );
-				_vector$2.setFromMatrixPosition( _boneMatrix );
-				path[1] = new Vector3(_vector$2.x, _vector$2.y, _vector$2.z);
-			} else if (bone.name.includes('Hips')) {
-				_boneMatrix.multiplyMatrices( _matrixWorldInv, bone.matrixWorld );
-				_vector$2.setFromMatrixPosition( _boneMatrix );
-				path[2] = new Vector3(_vector$2.x, _vector$2.y, _vector$2.z);
-			} else if (bone.name.includes('LeftUpLeg')) {
-				_boneMatrix.multiplyMatrices( _matrixWorldInv, bone.matrixWorld );
-				_vector$2.setFromMatrixPosition( _boneMatrix );
-				path[3] = new Vector3(_vector$2.x, _vector$2.y, _vector$2.z);
-			} else if (bone.name.includes('LeftFoot')) {
-				_boneMatrix.multiplyMatrices( _matrixWorldInv, bone.matrixWorld );
-				_vector$2.setFromMatrixPosition( _boneMatrix );
-				path[4] = new Vector3(_vector$2.x, _vector$2.y, _vector$2.z);
+			for ( let j = 0; j < this.numIndex; j ++ ) {
+
+				const boneName = this.nameList[j];
+				
+				if (bone.name === 'mixamorig' + boneName) {
+					_boneMatrix.multiplyMatrices( _matrixWorldInv, bone.matrixWorld );
+					_vector$2.setFromMatrixPosition( _boneMatrix );
+					path[j] = new Vector3(_vector$2.x, _vector$2.y, _vector$2.z);
+				}
 			}
 			
 		}
 		const curve = new CatmullRomCurve3(path);
-		const points = curve.getPoints( 50 );
 
-		this.geometry.setFromPoints(points);
-		this.geometry = new BufferGeometry().setFromPoints( points );
+		this.geometry = new TubeGeometry(curve, 100, 1.0, 10, false);
 	
 		super.updateMatrixWorld( force );
 

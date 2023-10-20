@@ -86,10 +86,18 @@ class App {
                 }
             });
             
-            // Dacing Joint
-            const skeletonHelper = new THREE.CustomCurveSkeleton(model);
-            skeletonHelper.visible = true;
-            this._scene.add(skeletonHelper);
+            // Dacing Curve
+            const lowerPart = ['RightFoot', 'RightUpLeg', 'Hips', 'LeftUpLeg', 'LeftFoot'];
+            const lowerCurve = new THREE.CustomCurveSkeleton(model, lowerPart);
+            this._scene.add(lowerCurve);
+
+            const spinePart = ['Neck', 'Spine1', 'Hips'];
+            const spineCurve = new THREE.CustomCurveSkeleton(model, spinePart);
+            this._scene.add(spineCurve);
+
+            const armPart = ['RightHand', 'RightForeArm', 'RightShoulder', 'LeftShoulder', 'LeftForeArm', 'LeftHand'];
+            const armCurve = new THREE.CustomCurveSkeleton(model, armPart);
+            this._scene.add(armCurve);
 
             // T-pose mesh
             const boneList = this._getBoneList(model);
@@ -108,6 +116,7 @@ class App {
         object.traverse((node) => {
             if (node.isBone) {
                 boneList.push(node);
+                console.log(node.name);
             }
         });
         return boneList;
