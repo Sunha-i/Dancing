@@ -50099,27 +50099,69 @@ class CustomCurveSkeleton extends Mesh {
 		const numIndex = nameList.length;
 
 		const path = [];
+		const points = [];
+
+		var headVertex = new Vector3(0, 0, 0);
+		var neckVertex = new Vector3(0, 0, 0);
+		var righteyeVertex = new Vector3(0, 0, 0);
 
 		for ( let i = 0; i < bones.length; i ++ ) {
 
 			const bone = bones[ i ];
 			const vertex = bone.getWorldPosition(new Vector3());
 
+			if (bone.name === 'mixamorig' + 'Head'){
+				headVertex = new Vector3(vertex.x, vertex.y, vertex.z);
+			}
+			if (bone.name === 'mixamorig' + 'Neck'){
+				neckVertex = new Vector3(vertex.x, vertex.y, vertex.z);
+			}
+			if (bone.name === 'mixamorig' + 'RightEye'){
+				righteyeVertex = new Vector3(vertex.x, vertex.y, vertex.z);
+			}
+
 			for ( let j = 0; j < numIndex; j ++ ) {
 
 				const boneName = nameList[j];
 				
 				if (bone.name === 'mixamorig' + boneName) {
-					path[j] = new Vector3(vertex.x, vertex.y, vertex.z);
+					if (nameList.length !== 1) {
+						path[j] = new Vector3(vertex.x, vertex.y, vertex.z);
+					}
 				}
 			}
 	
 		}
+
+		const radius = headVertex.y - neckVertex.y;
+		const radius_eye = radius/(2.5);
+
+		if (nameList[0] === 'Head') {
+			for(let i = 0; i <= 360; i++){
+				if (i % 45 === 0) {
+					path.push(new Vector3(headVertex.x + Math.sin(i*(Math.PI/180))*radius, headVertex.y + Math.cos(i*(Math.PI/180))*radius + 5, headVertex.z));
+				}
+            }
+			// path.push(righteyeVertex);
+		}
+
+		if (nameList[0] === 'RightEye') {
+			for(let i = 0; i <= 360; i++){
+                path.push(new Vector3(headVertex.x + Math.sin(i*(Math.PI/180))*radius_eye + radius_eye, headVertex.y + Math.cos(i*(Math.PI/180))*radius_eye + radius_eye, headVertex.z));
+            }
+		}
+
+		if (nameList[0] === 'LeftEye') {
+			for(let i = 0; i <= 360; i++){
+                path.push(new Vector3(headVertex.x + Math.sin(i*(Math.PI/180))*radius_eye - radius_eye, headVertex.y + Math.cos(i*(Math.PI/180))*radius_eye + radius_eye, headVertex.z));
+            }
+		}
+
 		const curve = new CatmullRomCurve3(path);
 		
-		const geometry = new TubeGeometry(curve, 100, 1.0, 10, false);
+		const geometry = new TubeGeometry(curve, 100, 2.0, 10, false);
 	
-		const material = new LineBasicMaterial( { color: 0xff00ff } );
+		const material = new MeshStandardMaterial( { color: 0xff00ff, emissive: 0x0000ff } ); // , roughness: 0, metalness: 1
 
 		super( geometry, material );
 
@@ -50138,11 +50180,37 @@ class CustomCurveSkeleton extends Mesh {
 
 	updateMatrixWorld( force ) {
 
+		console.log();
+
 		const bones = this.bones;
 		
 		_matrixWorldInv.copy( this.root.matrixWorld ).invert();
 
 		const path = []
+		const points = [];
+
+		var headVertex = new Vector3(0, 0, 0);
+		var neckVertex = new Vector3(0, 0, 0);
+		var righteyeVertex = new Vector3(0, 0, 0);
+
+		for ( let i = 0; i < bones.length; i ++ ) {
+
+			const bone = bones[ i ];
+
+			if (bone.name === 'mixamorig' + 'Head'){
+				_boneMatrix.multiplyMatrices( _matrixWorldInv, bone.matrixWorld );
+				headVertex.setFromMatrixPosition( _boneMatrix );
+			}
+			if (bone.name === 'mixamorig' + 'Neck'){
+				_boneMatrix.multiplyMatrices( _matrixWorldInv, bone.matrixWorld );
+				neckVertex.setFromMatrixPosition( _boneMatrix );
+			}
+			if (bone.name === 'mixamorig' + 'RightEye'){
+				_boneMatrix.multiplyMatrices( _matrixWorldInv, bone.matrixWorld );
+				righteyeVertex.setFromMatrixPosition( _boneMatrix );
+			}
+
+		}
 
 		for ( let i = 0; i < bones.length; i ++ ) {
 
@@ -50153,16 +50221,43 @@ class CustomCurveSkeleton extends Mesh {
 				const boneName = this.nameList[j];
 				
 				if (bone.name === 'mixamorig' + boneName) {
-					_boneMatrix.multiplyMatrices( _matrixWorldInv, bone.matrixWorld );
-					_vector$2.setFromMatrixPosition( _boneMatrix );
-					path[j] = new Vector3(_vector$2.x, _vector$2.y, _vector$2.z);
+					if (this.nameList.length !== 1) {
+						_boneMatrix.multiplyMatrices( _matrixWorldInv, bone.matrixWorld );
+						_vector$2.setFromMatrixPosition( _boneMatrix );
+						path[j] = new Vector3(_vector$2.x, _vector$2.y, _vector$2.z);
+					}
 				}
 			}
 			
 		}
+		const radius = headVertex.y - neckVertex.y;
+		const radius_eye = radius/(2.5);
+
+		if (this.nameList[0] === 'Head') {
+			for(let i = 0; i <= 360; i++){
+				if (i % 45 === 0) {
+					path.push(new Vector3(headVertex.x + Math.sin(i*(Math.PI/180))*radius, headVertex.y + Math.cos(i*(Math.PI/180))*radius + 5, headVertex.z));
+				}
+                // path.push(new Vector3(headVertex.x + Math.sin(i*(Math.PI/180))*radius, headVertex.y + Math.cos(i*(Math.PI/180))*radius + 5, headVertex.z));
+            }
+			// path.push(righteyeVertex);
+		}
+
+		if (this.nameList[0] === 'RightEye') {
+			for(let i = 0; i <= 360; i++){
+                path.push(new Vector3(headVertex.x + Math.sin(i*(Math.PI/180))*radius_eye + radius_eye, headVertex.y + Math.cos(i*(Math.PI/180))*radius_eye + radius_eye, headVertex.z));
+            }
+		}
+
+		if (this.nameList[0] === 'LeftEye') {
+			for(let i = 0; i <= 360; i++){
+                path.push(new Vector3(headVertex.x + Math.sin(i*(Math.PI/180))*radius_eye - radius_eye, headVertex.y + Math.cos(i*(Math.PI/180))*radius_eye + radius_eye, headVertex.z));
+            }
+		}
+
 		const curve = new CatmullRomCurve3(path);
 
-		this.geometry = new TubeGeometry(curve, 100, 1.0, 10, false);
+		this.geometry = new TubeGeometry(curve, 100, 2.0, 10, false);
 	
 		super.updateMatrixWorld( force );
 

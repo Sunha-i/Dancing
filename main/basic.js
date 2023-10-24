@@ -19,7 +19,8 @@ class App {
 
         this._setupCamera();
         this._setupLight();
-        this._setupModel();
+        this._setupBackground();
+        // this._setupModel();
         this._setupControls();
 
         window.onresize = this.resize.bind(this);
@@ -95,9 +96,21 @@ class App {
             const spineCurve = new THREE.CustomCurveSkeleton(model, spinePart);
             this._scene.add(spineCurve);
 
-            const armPart = ['RightHand', 'RightForeArm', 'RightShoulder', 'LeftShoulder', 'LeftForeArm', 'LeftHand'];
+            const armPart = ['RightHand', 'RightForeArm', 'Neck', 'LeftForeArm', 'LeftHand'];
             const armCurve = new THREE.CustomCurveSkeleton(model, armPart);
             this._scene.add(armCurve);
+
+            const headPart = ['Head'];
+            const headCurve = new THREE.CustomCurveSkeleton(model, headPart);
+            this._scene.add(headCurve);
+
+            const righteyePart = ['RightEye'];
+            const righteyeCurve = new THREE.CustomCurveSkeleton(model, righteyePart);
+            this._scene.add(righteyeCurve);
+
+            const lefteyePart = ['LeftEye'];
+            const lefteyeCurve = new THREE.CustomCurveSkeleton(model, lefteyePart);
+            this._scene.add(lefteyeCurve);
 
             // T-pose mesh
             const boneList = this._getBoneList(model);
@@ -106,7 +119,7 @@ class App {
             // Extract 5 points
             const boneList2 = this._getBoneList2(model);
             this._visualizeBones(boneList2, 0xff0000, 0.5);
-            
+
         });
     }
 
@@ -162,10 +175,20 @@ class App {
 
     _setupLight() {
         const color = 0xffffff;
-        const intensity = 5;
+        const intensity = 4; // 광원의 감도
         const light = new THREE.DirectionalLight(color, intensity);
         light.position.set(0, 0, 1);
         this._scene.add(light);
+    }
+
+    _setupBackground() {
+        const loader = new THREE.TextureLoader();
+        loader.load("./data/winter_evening.jpg", texture => {
+            const renderTarget = new THREE.WebGLCubeRenderTarget(texture.image.height);
+            renderTarget.fromEquirectangularTexture(this._renderer, texture);
+            this._scene.background = renderTarget.texture;
+            this._setupModel();
+        });
     }
 
     update(time) {
