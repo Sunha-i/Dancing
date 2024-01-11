@@ -100,17 +100,17 @@ class App {
             const armCurve = new THREE.CustomCurveSkeleton(model, armPart);
             this._scene.add(armCurve);
 
-            const headPart = ['Head'];
+            const headPart = ['Head']; //'HeadTop_End',, 'RightEye', 'HeadTop_End', 'Head'
             const headCurve = new THREE.CustomCurveSkeleton(model, headPart);
             this._scene.add(headCurve);
 
-            const righteyePart = ['RightEye'];
-            const righteyeCurve = new THREE.CustomCurveSkeleton(model, righteyePart);
-            this._scene.add(righteyeCurve);
+            // const righteyePart = ['RightEye'];
+            // const righteyeCurve = new THREE.CustomCurveSkeleton(model, righteyePart);
+            // this._scene.add(righteyeCurve);
 
-            const lefteyePart = ['LeftEye'];
-            const lefteyeCurve = new THREE.CustomCurveSkeleton(model, lefteyePart);
-            this._scene.add(lefteyeCurve);
+            // const lefteyePart = ['LeftEye'];
+            // const lefteyeCurve = new THREE.CustomCurveSkeleton(model, lefteyePart);
+            // this._scene.add(lefteyeCurve);
 
             // T-pose mesh
             const boneList = this._getBoneList(model);

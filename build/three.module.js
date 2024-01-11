@@ -50192,6 +50192,7 @@ class CustomCurveSkeleton extends Mesh {
 		var headVertex = new Vector3(0, 0, 0);
 		var neckVertex = new Vector3(0, 0, 0);
 		var righteyeVertex = new Vector3(0, 0, 0);
+		var lefteyeVertex = new Vector3(0, 0, 0);
 
 		for ( let i = 0; i < bones.length; i ++ ) {
 
@@ -50208,6 +50209,10 @@ class CustomCurveSkeleton extends Mesh {
 			if (bone.name === 'mixamorig' + 'RightEye'){
 				_boneMatrix.multiplyMatrices( _matrixWorldInv, bone.matrixWorld );
 				righteyeVertex.setFromMatrixPosition( _boneMatrix );
+			}
+			if (bone.name === 'mixamorig' + 'RightEye'){
+				_boneMatrix.multiplyMatrices( _matrixWorldInv, bone.matrixWorld );
+				lefteyeVertex.setFromMatrixPosition( _boneMatrix );
 			}
 
 		}
@@ -50232,11 +50237,12 @@ class CustomCurveSkeleton extends Mesh {
 		}
 		const radius = headVertex.y - neckVertex.y;
 		const radius_eye = radius/(2.5);
+		// (lefteyeVertex.x + righteyeVertex.x)/2
 
 		if (this.nameList[0] === 'Head') {
 			for(let i = 0; i <= 360; i++){
 				if (i % 45 === 0) {
-					path.push(new Vector3(headVertex.x + Math.sin(i*(Math.PI/180))*radius, headVertex.y + Math.cos(i*(Math.PI/180))*radius + 5, headVertex.z));
+					path.push(new Vector3((lefteyeVertex.x + righteyeVertex.x)/2 + Math.sin(i*(Math.PI/180))*radius, (lefteyeVertex.y + righteyeVertex.y)/2 + Math.cos(i*(Math.PI/180))*radius + 5, (lefteyeVertex.z + righteyeVertex.z)/2));
 				}
                 // path.push(new Vector3(headVertex.x + Math.sin(i*(Math.PI/180))*radius, headVertex.y + Math.cos(i*(Math.PI/180))*radius + 5, headVertex.z));
             }
