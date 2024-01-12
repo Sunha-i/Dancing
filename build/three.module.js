@@ -50386,7 +50386,7 @@ class CustomCurveSkeleton2 extends Mesh {
 	updateMatrixWorld( force ) {
 
 		// console.log(this.framenum);
-		console.log(jointPositions.DallaDalla[0][0][0]);
+		// console.log(jointPositions.DallaDalla[0][0][0]);
 
 		const bones = this.bones;
 		
