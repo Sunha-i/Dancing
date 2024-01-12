@@ -1,6 +1,7 @@
 import * as THREE from '../build/three.module.js';
 import { OrbitControls } from "../examples/jsm/controls/OrbitControls.js"
 import { GLTFLoader } from "../examples/jsm/loaders/GLTFLoader.js"
+import jointPositions from './jointPositions.js';
 
 class App {
     constructor() {
@@ -27,6 +28,7 @@ class App {
         this.resize();
 
         requestAnimationFrame(this.render.bind(this));
+        // console.log(jointPositions.DallaDalla[0][0][0]);
     }
 
     _setupControls() {
@@ -88,20 +90,20 @@ class App {
             });
             
             // Dacing Curve
-            const lowerPart = ['RightFoot', 'RightUpLeg', 'Hips', 'LeftUpLeg', 'LeftFoot'];
-            const lowerCurve = new THREE.CustomCurveSkeleton(model, lowerPart);
+            const lowerPart = ['RightFoot', 'RightLeg', 'RightUpLeg', 'Hips', 'LeftUpLeg', 'LeftLeg', 'LeftFoot'];
+            const lowerCurve = new THREE.CustomCurveSkeleton2(model, lowerPart);
             this._scene.add(lowerCurve);
 
             const spinePart = ['Neck', 'Spine1', 'Hips'];
-            const spineCurve = new THREE.CustomCurveSkeleton(model, spinePart);
+            const spineCurve = new THREE.CustomCurveSkeleton2(model, spinePart);
             this._scene.add(spineCurve);
 
-            const armPart = ['RightHand', 'RightForeArm', 'Neck', 'LeftForeArm', 'LeftHand'];
-            const armCurve = new THREE.CustomCurveSkeleton(model, armPart);
+            const armPart = ['RightHand', 'RightForeArm', 'RightShoulder', 'Neck', 'LeftShoulder', 'LeftForeArm', 'LeftHand'];
+            const armCurve = new THREE.CustomCurveSkeleton2(model, armPart);
             this._scene.add(armCurve);
 
             const headPart = ['Head']; //'HeadTop_End',, 'RightEye', 'HeadTop_End', 'Head'
-            const headCurve = new THREE.CustomCurveSkeleton(model, headPart);
+            const headCurve = new THREE.CustomCurveSkeleton2(model, headPart);
             this._scene.add(headCurve);
 
             // const righteyePart = ['RightEye'];
@@ -129,7 +131,7 @@ class App {
         object.traverse((node) => {
             if (node.isBone) {
                 boneList.push(node);
-                console.log(node.name);
+                // console.log(node.name);
             }
         });
         return boneList;

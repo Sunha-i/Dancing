@@ -50105,6 +50105,8 @@ class CustomCurveSkeleton extends Mesh {
 		var neckVertex = new Vector3(0, 0, 0);
 		var righteyeVertex = new Vector3(0, 0, 0);
 
+		var bonePosDict = {};
+
 		for ( let i = 0; i < bones.length; i ++ ) {
 
 			const bone = bones[ i ];
@@ -50127,11 +50129,15 @@ class CustomCurveSkeleton extends Mesh {
 				if (bone.name === 'mixamorig' + boneName) {
 					if (nameList.length !== 1) {
 						path[j] = new Vector3(vertex.x, vertex.y, vertex.z);
+						bonePosDict[boneName] = [vertex.x, vertex.y, vertex.z];
+						// console.log(`boneName = ${boneName} / bone_pos : ${vertex.x}, ${vertex.y}, ${vertex.z}`)
+						// console.log(`nextBoneName = ${nameList[j+1]} / bone_pos : ${vertex.x}, ${vertex.y}, ${vertex.z}`)
 					}
 				}
 			}
 	
 		}
+		console.log(bonePosDict);
 
 		const radius = headVertex.y - neckVertex.y;
 		const radius_eye = radius/(2.5);
@@ -50266,6 +50272,232 @@ class CustomCurveSkeleton extends Mesh {
 		this.geometry = new TubeGeometry(curve, 100, 2.0, 10, false);
 	
 		super.updateMatrixWorld( force );
+
+	}
+
+	dispose() {
+
+		this.geometry.dispose();
+		this.material.dispose();
+
+	}
+
+}
+import jointPositions from "../main/jointPositions.js";
+
+class CustomCurveSkeleton2 extends Mesh {
+
+	constructor( object, nameList ) {
+
+		const bones = getBoneList( object );
+		const numIndex = nameList.length;
+
+		const path = [];
+		const points = [];
+
+		var headVertex = new Vector3(0, 0, 0);
+		var neckVertex = new Vector3(0, 0, 0);
+		var righteyeVertex = new Vector3(0, 0, 0);
+
+		var bonePosDict = {};
+
+		// console.log(jointPositions.DallaDalla[0][0][0])
+
+		var framenum = 0;
+
+		for ( let i = 0; i < bones.length; i ++ ) {
+
+			const bone = bones[ i ];
+			const vertex = bone.getWorldPosition(new Vector3());
+
+			if (bone.name === 'mixamorig' + 'Head'){
+				headVertex = new Vector3(vertex.x, vertex.y, vertex.z);
+			}
+			if (bone.name === 'mixamorig' + 'Neck'){
+				neckVertex = new Vector3(vertex.x, vertex.y, vertex.z);
+			}
+			if (bone.name === 'mixamorig' + 'RightEye'){
+				righteyeVertex = new Vector3(vertex.x, vertex.y, vertex.z);
+			}
+
+			for ( let j = 0; j < numIndex; j ++ ) {
+
+				const boneName = nameList[j];
+				
+				if (bone.name === 'mixamorig' + boneName) {
+					if (nameList.length !== 1) {
+						path[j] = new Vector3(vertex.x, vertex.y, vertex.z);
+						bonePosDict[boneName] = [vertex.x, vertex.y, vertex.z];
+						// console.log(`boneName = ${boneName} / bone_pos : ${vertex.x}, ${vertex.y}, ${vertex.z}`)
+						// console.log(`nextBoneName = ${nameList[j+1]} / bone_pos : ${vertex.x}, ${vertex.y}, ${vertex.z}`)
+					}
+				}
+			}
+	
+		}
+		console.log(bonePosDict);
+
+		const radius = headVertex.y - neckVertex.y;
+		const radius_eye = radius/(2.5);
+
+		if (nameList[0] === 'Head') {
+			for(let i = 0; i <= 360; i++){
+				if (i % 45 === 0) {
+					path.push(new Vector3(headVertex.x + Math.sin(i*(Math.PI/180))*radius, headVertex.y + Math.cos(i*(Math.PI/180))*radius + 5, headVertex.z));
+				}
+            }
+			// path.push(righteyeVertex);
+		}
+
+		if (nameList[0] === 'RightEye') {
+			for(let i = 0; i <= 360; i++){
+                path.push(new Vector3(headVertex.x + Math.sin(i*(Math.PI/180))*radius_eye + radius_eye, headVertex.y + Math.cos(i*(Math.PI/180))*radius_eye + radius_eye, headVertex.z));
+            }
+		}
+
+		if (nameList[0] === 'LeftEye') {
+			for(let i = 0; i <= 360; i++){
+                path.push(new Vector3(headVertex.x + Math.sin(i*(Math.PI/180))*radius_eye - radius_eye, headVertex.y + Math.cos(i*(Math.PI/180))*radius_eye + radius_eye, headVertex.z));
+            }
+		}
+
+		const curve = new CatmullRomCurve3(path);
+		
+		const geometry = new TubeGeometry(curve, 100, 2.0, 10, false);
+	
+		const material = new MeshStandardMaterial( { color: 0xff00ff, emissive: 0x0000ff } ); // , roughness: 0, metalness: 1
+
+		super( geometry, material );
+
+		this.isCustomCurveSkeleton = true;
+		this.type = 'CustomCurveSkeleton';
+
+		this.root = object;
+		this.bones = bones;
+
+		this.matrix = object.matrixWorld;
+		this.matrixAutoUpdate = false;
+
+		this.numIndex = numIndex;
+		this.nameList = nameList;
+		this.framenum = framenum;
+	}
+
+	updateMatrixWorld( force ) {
+
+		// console.log(this.framenum);
+		console.log(jointPositions.DallaDalla[0][0][0]);
+
+		const bones = this.bones;
+		
+		_matrixWorldInv.copy( this.root.matrixWorld ).invert();
+
+		const path = []
+
+		var headVertex = new Vector3(0, 0, 0);
+		var neckVertex = new Vector3(0, 0, 0);
+		var righteyeVertex = new Vector3(0, 0, 0);
+		var lefteyeVertex = new Vector3(0, 0, 0);
+
+		for ( let i = 0; i < bones.length; i ++ ) {
+
+			const bone = bones[ i ];
+
+			if (bone.name === 'mixamorig' + 'Head'){
+				_boneMatrix.multiplyMatrices( _matrixWorldInv, bone.matrixWorld );
+				headVertex.setFromMatrixPosition( _boneMatrix );
+			}
+			if (bone.name === 'mixamorig' + 'Neck'){
+				_boneMatrix.multiplyMatrices( _matrixWorldInv, bone.matrixWorld );
+				neckVertex.setFromMatrixPosition( _boneMatrix );
+			}
+			if (bone.name === 'mixamorig' + 'RightEye'){
+				_boneMatrix.multiplyMatrices( _matrixWorldInv, bone.matrixWorld );
+				righteyeVertex.setFromMatrixPosition( _boneMatrix );
+			}
+			if (bone.name === 'mixamorig' + 'RightEye'){
+				_boneMatrix.multiplyMatrices( _matrixWorldInv, bone.matrixWorld );
+				lefteyeVertex.setFromMatrixPosition( _boneMatrix );
+			}
+
+		}
+
+		for ( let i = 0; i < bones.length; i ++ ) {
+
+			const bone = bones[ i ];
+
+			for ( let j = 0; j < this.numIndex; j ++ ) {
+
+				const boneName = this.nameList[j];
+				
+				if (bone.name === 'mixamorig' + boneName) {
+					if (this.nameList.length !== 1) {
+						// _boneMatrix.multiplyMatrices( _matrixWorldInv, bone.matrixWorld );
+						// _vector$2.setFromMatrixPosition( _boneMatrix );
+						// _vector$2.setFromMatrixPosition( bone.matrixWorld );
+						// path[j] = new Vector3(_vector$2.x, _vector$2.y, _vector$2.z);
+
+						var idx;
+
+						switch(bone.name) {
+							case 'mixamorigLeftUpLeg':        idx = 0;    break;
+							case 'mixamorigLeftLeg':        idx = 1;    break;
+							case 'mixamorigLeftFoot':        idx = 2;    break;
+							case 'mixamorigRightUpLeg':        idx = 3;    break;
+							case 'mixamorigRightLeg':        idx = 4;    break;
+							case 'mixamorigRightFoot':        idx = 5;    break;
+							case 'mixamorigLeftShoulder':    idx = 6;    break;
+							case 'mixamorigLeftForeArm':    idx = 7;    break;
+							case 'mixamorigLeftHand':        idx = 8;    break;
+							case 'mixamorigRightShoulder':    idx = 9;    break;
+							case 'mixamorigRightForeArm':    idx = 10;    break;
+							case 'mixamorigRightHand':        idx = 11;    break;
+							case 'mixamorigHips':            idx = 12;    break;
+							case 'mixamorigNeck':            idx = 13;    break;
+							default:        break;
+						}
+
+						path[j] = new Vector3(jointPositions.DallaDalla[this.framenum][idx][0], jointPositions.DallaDalla[this.framenum][idx][1], jointPositions.DallaDalla[this.framenum][idx][2]);
+
+					}
+				}
+			}
+			
+		}
+		const radius = headVertex.y - neckVertex.y;
+		const radius_eye = radius/(2.5);
+		// (lefteyeVertex.x + righteyeVertex.x)/2
+
+		if (this.nameList[0] === 'Head') {
+			for(let i = 0; i <= 360; i++){
+				if (i % 45 === 0) {
+					path.push(new Vector3((lefteyeVertex.x + righteyeVertex.x)/2 + Math.sin(i*(Math.PI/180))*radius, (lefteyeVertex.y + righteyeVertex.y)/2 + Math.cos(i*(Math.PI/180))*radius + 5, (lefteyeVertex.z + righteyeVertex.z)/2));
+				}
+                // path.push(new Vector3(headVertex.x + Math.sin(i*(Math.PI/180))*radius, headVertex.y + Math.cos(i*(Math.PI/180))*radius + 5, headVertex.z));
+            }
+			// path.push(righteyeVertex);
+		}
+
+		if (this.nameList[0] === 'RightEye') {
+			for(let i = 0; i <= 360; i++){
+                path.push(new Vector3(headVertex.x + Math.sin(i*(Math.PI/180))*radius_eye + radius_eye, headVertex.y + Math.cos(i*(Math.PI/180))*radius_eye + radius_eye, headVertex.z));
+            }
+		}
+
+		if (this.nameList[0] === 'LeftEye') {
+			for(let i = 0; i <= 360; i++){
+                path.push(new Vector3(headVertex.x + Math.sin(i*(Math.PI/180))*radius_eye - radius_eye, headVertex.y + Math.cos(i*(Math.PI/180))*radius_eye + radius_eye, headVertex.z));
+            }
+		}
+
+		const curve = new CatmullRomCurve3(path);
+
+		this.geometry = new TubeGeometry(curve, 100, 2.0, 10, false);
+	
+		super.updateMatrixWorld( force );
+
+		this.framenum += 1;
+		this.framenum %= 531;
 
 	}
 
@@ -51618,4 +51850,4 @@ if ( typeof window !== 'undefined' ) {
 
 }
 
-export { ACESFilmicToneMapping, AddEquation, AddOperation, AdditiveAnimationBlendMode, AdditiveBlending, AlphaFormat, AlwaysCompare, AlwaysDepth, AlwaysStencilFunc, AmbientLight, AmbientLightProbe, AnimationAction, AnimationClip, AnimationLoader, AnimationMixer, AnimationObjectGroup, AnimationUtils, ArcCurve, ArrayCamera, ArrowHelper, Audio, AudioAnalyser, AudioContext, AudioListener, AudioLoader, AxesHelper, BackSide, BasicDepthPacking, BasicShadowMap, Bone, BooleanKeyframeTrack, Box2, Box3, Box3Helper, BoxGeometry, BoxHelper, BufferAttribute, BufferGeometry, BufferGeometryLoader, ByteType, Cache, Camera, CameraHelper, CanvasTexture, CapsuleGeometry, CatmullRomCurve3, CineonToneMapping, CircleGeometry, ClampToEdgeWrapping, Clock, Color, ColorKeyframeTrack, ColorManagement, CompressedArrayTexture, CompressedCubeTexture, CompressedTexture, CompressedTextureLoader, ConeGeometry, CubeCamera, CubeReflectionMapping, CubeRefractionMapping, CubeTexture, CubeTextureLoader, CubeUVReflectionMapping, CubicBezierCurve, CubicBezierCurve3, CubicInterpolant, CullFaceBack, CullFaceFront, CullFaceFrontBack, CullFaceNone, Curve, CurvePath, CustomBlending, CustomToneMapping, CylinderGeometry, Cylindrical, Data3DTexture, DataArrayTexture, DataTexture, DataTextureLoader, DataUtils, DecrementStencilOp, DecrementWrapStencilOp, DefaultLoadingManager, DepthFormat, DepthStencilFormat, DepthTexture, DirectionalLight, DirectionalLightHelper, DiscreteInterpolant, DisplayP3ColorSpace, DodecahedronGeometry, DoubleSide, DstAlphaFactor, DstColorFactor, DynamicCopyUsage, DynamicDrawUsage, DynamicReadUsage, EdgesGeometry, EllipseCurve, EqualCompare, EqualDepth, EqualStencilFunc, EquirectangularReflectionMapping, EquirectangularRefractionMapping, Euler, EventDispatcher, ExtrudeGeometry, FileLoader, Float16BufferAttribute, Float32BufferAttribute, Float64BufferAttribute, FloatType, Fog, FogExp2, FramebufferTexture, FrontSide, Frustum, GLBufferAttribute, GLSL1, GLSL3, GreaterCompare, GreaterDepth, GreaterEqualCompare, GreaterEqualDepth, GreaterEqualStencilFunc, GreaterStencilFunc, GridHelper, Group, HalfFloatType, HemisphereLight, HemisphereLightHelper, HemisphereLightProbe, IcosahedronGeometry, ImageBitmapLoader, ImageLoader, ImageUtils, IncrementStencilOp, IncrementWrapStencilOp, InstancedBufferAttribute, InstancedBufferGeometry, InstancedInterleavedBuffer, InstancedMesh, Int16BufferAttribute, Int32BufferAttribute, Int8BufferAttribute, IntType, InterleavedBuffer, InterleavedBufferAttribute, Interpolant, InterpolateDiscrete, InterpolateLinear, InterpolateSmooth, InvertStencilOp, KeepStencilOp, KeyframeTrack, LOD, LatheGeometry, Layers, LessCompare, LessDepth, LessEqualCompare, LessEqualDepth, LessEqualStencilFunc, LessStencilFunc, Light, LightProbe, Line, Line3, LineBasicMaterial, LineCurve, LineCurve3, LineDashedMaterial, LineLoop, LineSegments, LinearDisplayP3ColorSpace, LinearEncoding, LinearFilter, LinearInterpolant, LinearMipMapLinearFilter, LinearMipMapNearestFilter, LinearMipmapLinearFilter, LinearMipmapNearestFilter, LinearSRGBColorSpace, LinearToneMapping, Loader, LoaderUtils, LoadingManager, LoopOnce, LoopPingPong, LoopRepeat, LuminanceAlphaFormat, LuminanceFormat, MOUSE, Material, MaterialLoader, MathUtils, Matrix3, Matrix4, MaxEquation, Mesh, MeshBasicMaterial, MeshDepthMaterial, MeshDistanceMaterial, MeshLambertMaterial, MeshMatcapMaterial, MeshNormalMaterial, MeshPhongMaterial, MeshPhysicalMaterial, MeshStandardMaterial, MeshToonMaterial, MinEquation, MirroredRepeatWrapping, MixOperation, MultiplyBlending, MultiplyOperation, NearestFilter, NearestMipMapLinearFilter, NearestMipMapNearestFilter, NearestMipmapLinearFilter, NearestMipmapNearestFilter, NeverCompare, NeverDepth, NeverStencilFunc, NoBlending, NoColorSpace, NoToneMapping, NormalAnimationBlendMode, NormalBlending, NotEqualCompare, NotEqualDepth, NotEqualStencilFunc, NumberKeyframeTrack, Object3D, ObjectLoader, ObjectSpaceNormalMap, OctahedronGeometry, OneFactor, OneMinusDstAlphaFactor, OneMinusDstColorFactor, OneMinusSrcAlphaFactor, OneMinusSrcColorFactor, OrthographicCamera, PCFShadowMap, PCFSoftShadowMap, PMREMGenerator, Path, PerspectiveCamera, Plane, PlaneGeometry, PlaneHelper, PointLight, PointLightHelper, Points, PointsMaterial, PolarGridHelper, PolyhedronGeometry, PositionalAudio, PropertyBinding, PropertyMixer, QuadraticBezierCurve, QuadraticBezierCurve3, Quaternion, QuaternionKeyframeTrack, QuaternionLinearInterpolant, RED_GREEN_RGTC2_Format, RED_RGTC1_Format, REVISION, RGBADepthPacking, RGBAFormat, RGBAIntegerFormat, RGBA_ASTC_10x10_Format, RGBA_ASTC_10x5_Format, RGBA_ASTC_10x6_Format, RGBA_ASTC_10x8_Format, RGBA_ASTC_12x10_Format, RGBA_ASTC_12x12_Format, RGBA_ASTC_4x4_Format, RGBA_ASTC_5x4_Format, RGBA_ASTC_5x5_Format, RGBA_ASTC_6x5_Format, RGBA_ASTC_6x6_Format, RGBA_ASTC_8x5_Format, RGBA_ASTC_8x6_Format, RGBA_ASTC_8x8_Format, RGBA_BPTC_Format, RGBA_ETC2_EAC_Format, RGBA_PVRTC_2BPPV1_Format, RGBA_PVRTC_4BPPV1_Format, RGBA_S3TC_DXT1_Format, RGBA_S3TC_DXT3_Format, RGBA_S3TC_DXT5_Format, RGB_BPTC_SIGNED_Format, RGB_BPTC_UNSIGNED_Format, RGB_ETC1_Format, RGB_ETC2_Format, RGB_PVRTC_2BPPV1_Format, RGB_PVRTC_4BPPV1_Format, RGB_S3TC_DXT1_Format, RGFormat, RGIntegerFormat, RawShaderMaterial, Ray, Raycaster, RectAreaLight, RedFormat, RedIntegerFormat, ReinhardToneMapping, RenderTarget, RepeatWrapping, ReplaceStencilOp, ReverseSubtractEquation, RingGeometry, SIGNED_RED_GREEN_RGTC2_Format, SIGNED_RED_RGTC1_Format, SRGBColorSpace, Scene, ShaderChunk, ShaderLib, ShaderMaterial, ShadowMaterial, Shape, ShapeGeometry, ShapePath, ShapeUtils, ShortType, Skeleton, SkeletonHelper, CustomCurveSkeleton, SkinnedMesh, Source, Sphere, SphereGeometry, Spherical, SphericalHarmonics3, SplineCurve, SpotLight, SpotLightHelper, Sprite, SpriteMaterial, SrcAlphaFactor, SrcAlphaSaturateFactor, SrcColorFactor, StaticCopyUsage, StaticDrawUsage, StaticReadUsage, StereoCamera, StreamCopyUsage, StreamDrawUsage, StreamReadUsage, StringKeyframeTrack, SubtractEquation, SubtractiveBlending, TOUCH, TangentSpaceNormalMap, TetrahedronGeometry, Texture, TextureLoader, TorusGeometry, TorusKnotGeometry, Triangle, TriangleFanDrawMode, TriangleStripDrawMode, TrianglesDrawMode, TubeGeometry, TwoPassDoubleSide, UVMapping, Uint16BufferAttribute, Uint32BufferAttribute, Uint8BufferAttribute, Uint8ClampedBufferAttribute, Uniform, UniformsGroup, UniformsLib, UniformsUtils, UnsignedByteType, UnsignedInt248Type, UnsignedIntType, UnsignedShort4444Type, UnsignedShort5551Type, UnsignedShortType, VSMShadowMap, Vector2, Vector3, Vector4, VectorKeyframeTrack, VideoTexture, WebGL1Renderer, WebGL3DRenderTarget, WebGLArrayRenderTarget, WebGLCoordinateSystem, WebGLCubeRenderTarget, WebGLMultipleRenderTargets, WebGLRenderTarget, WebGLRenderer, WebGLUtils, WebGPUCoordinateSystem, WireframeGeometry, WrapAroundEnding, ZeroCurvatureEnding, ZeroFactor, ZeroSlopeEnding, ZeroStencilOp, _SRGBAFormat, createCanvasElement, sRGBEncoding };
+export { ACESFilmicToneMapping, AddEquation, AddOperation, AdditiveAnimationBlendMode, AdditiveBlending, AlphaFormat, AlwaysCompare, AlwaysDepth, AlwaysStencilFunc, AmbientLight, AmbientLightProbe, AnimationAction, AnimationClip, AnimationLoader, AnimationMixer, AnimationObjectGroup, AnimationUtils, ArcCurve, ArrayCamera, ArrowHelper, Audio, AudioAnalyser, AudioContext, AudioListener, AudioLoader, AxesHelper, BackSide, BasicDepthPacking, BasicShadowMap, Bone, BooleanKeyframeTrack, Box2, Box3, Box3Helper, BoxGeometry, BoxHelper, BufferAttribute, BufferGeometry, BufferGeometryLoader, ByteType, Cache, Camera, CameraHelper, CanvasTexture, CapsuleGeometry, CatmullRomCurve3, CineonToneMapping, CircleGeometry, ClampToEdgeWrapping, Clock, Color, ColorKeyframeTrack, ColorManagement, CompressedArrayTexture, CompressedCubeTexture, CompressedTexture, CompressedTextureLoader, ConeGeometry, CubeCamera, CubeReflectionMapping, CubeRefractionMapping, CubeTexture, CubeTextureLoader, CubeUVReflectionMapping, CubicBezierCurve, CubicBezierCurve3, CubicInterpolant, CullFaceBack, CullFaceFront, CullFaceFrontBack, CullFaceNone, Curve, CurvePath, CustomBlending, CustomToneMapping, CylinderGeometry, Cylindrical, Data3DTexture, DataArrayTexture, DataTexture, DataTextureLoader, DataUtils, DecrementStencilOp, DecrementWrapStencilOp, DefaultLoadingManager, DepthFormat, DepthStencilFormat, DepthTexture, DirectionalLight, DirectionalLightHelper, DiscreteInterpolant, DisplayP3ColorSpace, DodecahedronGeometry, DoubleSide, DstAlphaFactor, DstColorFactor, DynamicCopyUsage, DynamicDrawUsage, DynamicReadUsage, EdgesGeometry, EllipseCurve, EqualCompare, EqualDepth, EqualStencilFunc, EquirectangularReflectionMapping, EquirectangularRefractionMapping, Euler, EventDispatcher, ExtrudeGeometry, FileLoader, Float16BufferAttribute, Float32BufferAttribute, Float64BufferAttribute, FloatType, Fog, FogExp2, FramebufferTexture, FrontSide, Frustum, GLBufferAttribute, GLSL1, GLSL3, GreaterCompare, GreaterDepth, GreaterEqualCompare, GreaterEqualDepth, GreaterEqualStencilFunc, GreaterStencilFunc, GridHelper, Group, HalfFloatType, HemisphereLight, HemisphereLightHelper, HemisphereLightProbe, IcosahedronGeometry, ImageBitmapLoader, ImageLoader, ImageUtils, IncrementStencilOp, IncrementWrapStencilOp, InstancedBufferAttribute, InstancedBufferGeometry, InstancedInterleavedBuffer, InstancedMesh, Int16BufferAttribute, Int32BufferAttribute, Int8BufferAttribute, IntType, InterleavedBuffer, InterleavedBufferAttribute, Interpolant, InterpolateDiscrete, InterpolateLinear, InterpolateSmooth, InvertStencilOp, KeepStencilOp, KeyframeTrack, LOD, LatheGeometry, Layers, LessCompare, LessDepth, LessEqualCompare, LessEqualDepth, LessEqualStencilFunc, LessStencilFunc, Light, LightProbe, Line, Line3, LineBasicMaterial, LineCurve, LineCurve3, LineDashedMaterial, LineLoop, LineSegments, LinearDisplayP3ColorSpace, LinearEncoding, LinearFilter, LinearInterpolant, LinearMipMapLinearFilter, LinearMipMapNearestFilter, LinearMipmapLinearFilter, LinearMipmapNearestFilter, LinearSRGBColorSpace, LinearToneMapping, Loader, LoaderUtils, LoadingManager, LoopOnce, LoopPingPong, LoopRepeat, LuminanceAlphaFormat, LuminanceFormat, MOUSE, Material, MaterialLoader, MathUtils, Matrix3, Matrix4, MaxEquation, Mesh, MeshBasicMaterial, MeshDepthMaterial, MeshDistanceMaterial, MeshLambertMaterial, MeshMatcapMaterial, MeshNormalMaterial, MeshPhongMaterial, MeshPhysicalMaterial, MeshStandardMaterial, MeshToonMaterial, MinEquation, MirroredRepeatWrapping, MixOperation, MultiplyBlending, MultiplyOperation, NearestFilter, NearestMipMapLinearFilter, NearestMipMapNearestFilter, NearestMipmapLinearFilter, NearestMipmapNearestFilter, NeverCompare, NeverDepth, NeverStencilFunc, NoBlending, NoColorSpace, NoToneMapping, NormalAnimationBlendMode, NormalBlending, NotEqualCompare, NotEqualDepth, NotEqualStencilFunc, NumberKeyframeTrack, Object3D, ObjectLoader, ObjectSpaceNormalMap, OctahedronGeometry, OneFactor, OneMinusDstAlphaFactor, OneMinusDstColorFactor, OneMinusSrcAlphaFactor, OneMinusSrcColorFactor, OrthographicCamera, PCFShadowMap, PCFSoftShadowMap, PMREMGenerator, Path, PerspectiveCamera, Plane, PlaneGeometry, PlaneHelper, PointLight, PointLightHelper, Points, PointsMaterial, PolarGridHelper, PolyhedronGeometry, PositionalAudio, PropertyBinding, PropertyMixer, QuadraticBezierCurve, QuadraticBezierCurve3, Quaternion, QuaternionKeyframeTrack, QuaternionLinearInterpolant, RED_GREEN_RGTC2_Format, RED_RGTC1_Format, REVISION, RGBADepthPacking, RGBAFormat, RGBAIntegerFormat, RGBA_ASTC_10x10_Format, RGBA_ASTC_10x5_Format, RGBA_ASTC_10x6_Format, RGBA_ASTC_10x8_Format, RGBA_ASTC_12x10_Format, RGBA_ASTC_12x12_Format, RGBA_ASTC_4x4_Format, RGBA_ASTC_5x4_Format, RGBA_ASTC_5x5_Format, RGBA_ASTC_6x5_Format, RGBA_ASTC_6x6_Format, RGBA_ASTC_8x5_Format, RGBA_ASTC_8x6_Format, RGBA_ASTC_8x8_Format, RGBA_BPTC_Format, RGBA_ETC2_EAC_Format, RGBA_PVRTC_2BPPV1_Format, RGBA_PVRTC_4BPPV1_Format, RGBA_S3TC_DXT1_Format, RGBA_S3TC_DXT3_Format, RGBA_S3TC_DXT5_Format, RGB_BPTC_SIGNED_Format, RGB_BPTC_UNSIGNED_Format, RGB_ETC1_Format, RGB_ETC2_Format, RGB_PVRTC_2BPPV1_Format, RGB_PVRTC_4BPPV1_Format, RGB_S3TC_DXT1_Format, RGFormat, RGIntegerFormat, RawShaderMaterial, Ray, Raycaster, RectAreaLight, RedFormat, RedIntegerFormat, ReinhardToneMapping, RenderTarget, RepeatWrapping, ReplaceStencilOp, ReverseSubtractEquation, RingGeometry, SIGNED_RED_GREEN_RGTC2_Format, SIGNED_RED_RGTC1_Format, SRGBColorSpace, Scene, ShaderChunk, ShaderLib, ShaderMaterial, ShadowMaterial, Shape, ShapeGeometry, ShapePath, ShapeUtils, ShortType, Skeleton, SkeletonHelper, CustomCurveSkeleton, CustomCurveSkeleton2, SkinnedMesh, Source, Sphere, SphereGeometry, Spherical, SphericalHarmonics3, SplineCurve, SpotLight, SpotLightHelper, Sprite, SpriteMaterial, SrcAlphaFactor, SrcAlphaSaturateFactor, SrcColorFactor, StaticCopyUsage, StaticDrawUsage, StaticReadUsage, StereoCamera, StreamCopyUsage, StreamDrawUsage, StreamReadUsage, StringKeyframeTrack, SubtractEquation, SubtractiveBlending, TOUCH, TangentSpaceNormalMap, TetrahedronGeometry, Texture, TextureLoader, TorusGeometry, TorusKnotGeometry, Triangle, TriangleFanDrawMode, TriangleStripDrawMode, TrianglesDrawMode, TubeGeometry, TwoPassDoubleSide, UVMapping, Uint16BufferAttribute, Uint32BufferAttribute, Uint8BufferAttribute, Uint8ClampedBufferAttribute, Uniform, UniformsGroup, UniformsLib, UniformsUtils, UnsignedByteType, UnsignedInt248Type, UnsignedIntType, UnsignedShort4444Type, UnsignedShort5551Type, UnsignedShortType, VSMShadowMap, Vector2, Vector3, Vector4, VectorKeyframeTrack, VideoTexture, WebGL1Renderer, WebGL3DRenderTarget, WebGLArrayRenderTarget, WebGLCoordinateSystem, WebGLCubeRenderTarget, WebGLMultipleRenderTargets, WebGLRenderTarget, WebGLRenderer, WebGLUtils, WebGPUCoordinateSystem, WireframeGeometry, WrapAroundEnding, ZeroCurvatureEnding, ZeroFactor, ZeroSlopeEnding, ZeroStencilOp, _SRGBAFormat, createCanvasElement, sRGBEncoding };
