@@ -1,6 +1,7 @@
 import * as THREE from '../build/three.module.js';
 import { OrbitControls } from "../examples/jsm/controls/OrbitControls.js"
 import { GLTFLoader } from "../examples/jsm/loaders/GLTFLoader.js"
+import jointPositions from './jointPositions.js';
 
 class App {
     constructor() {
@@ -19,13 +20,15 @@ class App {
 
         this._setupCamera();
         this._setupLight();
-        this._setupModel();
+        this._setupBackground();
+        // this._setupModel();
         this._setupControls();
 
         window.onresize = this.resize.bind(this);
         this.resize();
 
         requestAnimationFrame(this.render.bind(this));
+        // console.log(jointPositions.DallaDalla[0][0][0]);
     }
 
     _setupControls() {
@@ -87,17 +90,29 @@ class App {
             });
             
             // Dacing Curve
-            const lowerPart = ['RightFoot', 'RightUpLeg', 'Hips', 'LeftUpLeg', 'LeftFoot'];
-            const lowerCurve = new THREE.CustomCurveSkeleton(model, lowerPart);
+            const lowerPart = ['RightFoot', 'RightLeg', 'RightUpLeg', 'Hips', 'LeftUpLeg', 'LeftLeg', 'LeftFoot'];
+            const lowerCurve = new THREE.CustomCurveSkeleton2(model, lowerPart);
             this._scene.add(lowerCurve);
 
             const spinePart = ['Neck', 'Spine1', 'Hips'];
-            const spineCurve = new THREE.CustomCurveSkeleton(model, spinePart);
+            const spineCurve = new THREE.CustomCurveSkeleton2(model, spinePart);
             this._scene.add(spineCurve);
 
-            const armPart = ['RightHand', 'RightForeArm', 'RightShoulder', 'LeftShoulder', 'LeftForeArm', 'LeftHand'];
-            const armCurve = new THREE.CustomCurveSkeleton(model, armPart);
+            const armPart = ['RightHand', 'RightForeArm', 'RightShoulder', 'Neck', 'LeftShoulder', 'LeftForeArm', 'LeftHand'];
+            const armCurve = new THREE.CustomCurveSkeleton2(model, armPart);
             this._scene.add(armCurve);
+
+            const headPart = ['Head']; //'HeadTop_End',, 'RightEye', 'HeadTop_End', 'Head'
+            const headCurve = new THREE.CustomCurveSkeleton2(model, headPart);
+            this._scene.add(headCurve);
+
+            // const righteyePart = ['RightEye'];
+            // const righteyeCurve = new THREE.CustomCurveSkeleton(model, righteyePart);
+            // this._scene.add(righteyeCurve);
+
+            // const lefteyePart = ['LeftEye'];
+            // const lefteyeCurve = new THREE.CustomCurveSkeleton(model, lefteyePart);
+            // this._scene.add(lefteyeCurve);
 
             // T-pose mesh
             const boneList = this._getBoneList(model);
@@ -106,7 +121,7 @@ class App {
             // Extract 5 points
             const boneList2 = this._getBoneList2(model);
             this._visualizeBones(boneList2, 0xff0000, 0.5);
-            
+
         });
     }
 
@@ -116,7 +131,7 @@ class App {
         object.traverse((node) => {
             if (node.isBone) {
                 boneList.push(node);
-                console.log(node.name);
+                // console.log(node.name);
             }
         });
         return boneList;
@@ -162,10 +177,20 @@ class App {
 
     _setupLight() {
         const color = 0xffffff;
-        const intensity = 5;
+        const intensity = 4; // 광원의 감도
         const light = new THREE.DirectionalLight(color, intensity);
         light.position.set(0, 0, 1);
         this._scene.add(light);
+    }
+
+    _setupBackground() {
+        const loader = new THREE.TextureLoader();
+        loader.load("./data/winter_evening.jpg", texture => {
+            const renderTarget = new THREE.WebGLCubeRenderTarget(texture.image.height);
+            renderTarget.fromEquirectangularTexture(this._renderer, texture);
+            this._scene.background = renderTarget.texture;
+            this._setupModel();
+        });
     }
 
     update(time) {
